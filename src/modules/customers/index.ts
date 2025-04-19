@@ -1,14 +1,17 @@
-// Export views
-export * from "./views";
-
 // Export components
 export * from "./components";
 
-// Export hooks
-export * from "./hooks";
+// Export views
+export * from "./views";
 
-// Export services
-export * from "./services";
+// Types
+export * from "./types";
 
-// Export utils
-export * from "./utils";
+// Constants
+export * from "./constants/api";
+
+// API
+export * from "./api/customerApi";
+
+// Hooks
+export * from "./hooks/useCustomers";
