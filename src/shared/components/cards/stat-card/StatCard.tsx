@@ -27,17 +27,43 @@ export interface StatCardProps {
   changeType?: 'positive' | 'negative' | 'neutral';
   
   /**
+   * Color de fondo del icono
+   */
+  iconBgColor?: string;
+  
+  /**
+   * Color del icono
+   */
+  iconColor?: string;
+  
+  /**
    * Clases adicionales
    */
   className?: string;
 }
 
+/**
+ * Componente StatCard - Muestra estadísticas con un icono, valor y tendencia
+ * 
+ * Ejemplo de uso:
+ * ```tsx
+ * <StatCard 
+ *   icon={<Users size={18} />}
+ *   value={5}
+ *   title="Active Customers"
+ *   changeText="+2 this week"
+ *   changeType="positive"
+ * />
+ * ```
+ */
 const StatCard: React.FC<StatCardProps> = ({
   icon,
   value,
   title,
   changeText,
   changeType = 'positive',
+  iconBgColor = 'bg-green-50', 
+  iconColor = 'text-green-600',
   className = '',
 }) => {
   // Determinar color para el texto de cambio
@@ -48,10 +74,10 @@ const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div className={`bg-white p-4 rounded-lg flex items-center gap-4 ${className}`}>
-      <div className="bg-green-50 p-3 rounded-full">
-        <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-          {icon}
+    <div className={`bg-white p-4 rounded-lg shadow flex items-center gap-4 ${className}`}>
+      <div className={`${iconBgColor} p-3 rounded-full`}>
+        <div className={`w-8 h-8 ${iconBgColor === 'bg-green-50' ? 'bg-green-100' : 'bg-opacity-20'} rounded-md flex items-center justify-center`}>
+          <div className={iconColor}>{icon}</div>
         </div>
       </div>
       <div>

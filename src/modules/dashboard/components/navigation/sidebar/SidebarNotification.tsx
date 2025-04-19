@@ -1,7 +1,6 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { PrimaryButton } from '../../../../../shared/components/buttons';
 
 export interface SidebarNotificationProps {
   /**
@@ -39,7 +38,7 @@ export interface SidebarNotificationProps {
  * Componente para mostrar notificaciones o alertas en el sidebar
  */
 const SidebarNotification: React.FC<SidebarNotificationProps> = ({
-  icon = <span className="text-xl">👨‍🍳</span>,
+  icon = <span className="text-2xl">👨‍🍳</span>,
   title = 'Please update your',
   subtitle = 'KYC/Food license',
   buttonText = 'Add Papers',
@@ -49,20 +48,22 @@ const SidebarNotification: React.FC<SidebarNotificationProps> = ({
   return (
     <div className={`bg-[var(--color-primary-light)] p-4 rounded-lg ${className}`}>
       <div className="flex items-start gap-3">
-        <div className="bg-white p-2 rounded-lg">
-          {icon}
+        <div className="bg-white rounded-full p-2.5">
+          <div className="bg-amber-500 rounded-full w-10 h-10 flex items-center justify-center">
+            {icon}
+          </div>
         </div>
-        <div>
-          <p className="text-xs text-[var(--color-primary)]">{title}</p>
-          <p className="text-xs text-[var(--color-primary)] font-semibold">{subtitle}</p>
+        <div className="pt-2">
+          <p className="text-sm text-[var(--color-primary)]">{title}</p>
+          <p className="text-sm text-[var(--color-primary)] font-semibold">{subtitle}</p>
         </div>
       </div>
-      <PrimaryButton 
-        className="mt-3 w-full bg-white text-[var(--color-primary)] text-xs py-2 rounded-lg border border-green-200"
+      <button 
+        className="mt-5 w-full bg-white hover:bg-gray-50 text-[var(--color-primary)] text-sm py-3 rounded-lg border border-[var(--color-primary-light)]"
         onClick={onButtonClick}
       >
         {buttonText}
-      </PrimaryButton>
+      </button>
     </div>
   );
 };
