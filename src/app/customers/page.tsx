@@ -5,7 +5,6 @@ import { useCustomers } from '@/modules/customers/hooks/useCustomers';
 import { SearchInput } from '@/shared/components/forms/search-input';
 import { PrimaryButton } from '@/shared/components/buttons/primary-button';
 import { StatCard } from '@/shared/components/cards/stat-card';
-import { StatusBadge } from '@/shared/components/data-display/status-badge';
 import { ActionButtons } from '@/shared/components/buttons/action-buttons';
 import { 
   Users, 
@@ -19,22 +18,37 @@ import {
   Trash
 } from 'lucide-react';
 
+// Número de clientes a mostrar por página
+const CUSTOMERS_PER_PAGE = 6;
+
 export default function CustomersPage() {
   const { customers, loading, error } = useCustomers();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Filtrar clientes por término de búsqueda
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Calcular el total de páginas
+  const totalPages = Math.ceil(filteredCustomers.length / CUSTOMERS_PER_PAGE);
+  
+  // Obtener clientes para la página actual
+  const indexOfLastCustomer = currentPage * CUSTOMERS_PER_PAGE;
+  const indexOfFirstCustomer = indexOfLastCustomer - CUSTOMERS_PER_PAGE;
+  const currentCustomers = filteredCustomers.slice(indexOfFirstCustomer, indexOfLastCustomer);
+  
+  // Función para cambiar de página
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
   
   // Calcular estadísticas
   const totalCustomers = customers.length;
   const activeCustomers = customers.filter(c => c.type === 'NORMAL').length;
   const inactiveCustomers = totalCustomers - activeCustomers;
   
-  // Generar datos de pedidos aleatorios para el ejemplo
-  const totalOrders = customers.reduce((sum) => sum + Math.floor(Math.random() * 5) + 1, 0);
+  // Datos de pedidos (por ahora solo mostramos cantidad estimada)
+  const totalOrders = totalCustomers > 0 ? totalCustomers * 2 : 0; // Estimación simple
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -116,16 +130,10 @@ export default function CustomersPage() {
                 Customer
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Orders
+                ID
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Order
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -133,71 +141,58 @@ export default function CustomersPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredCustomers.length > 0 ? (
-              filteredCustomers.map((customer) => {
-                // Generar datos de ejemplo para el cliente
-                const ordersCount = Math.floor(Math.random() * 15) + 1;
-                const isActive = Math.random() > 0.2; // 80% probabilidad de estar activo
-                const lastOrderDate = new Date();
-                lastOrderDate.setDate(lastOrderDate.getDate() - Math.floor(Math.random() * 30));
-                const formattedDate = `${lastOrderDate.getFullYear()}-${String(lastOrderDate.getMonth() + 1).padStart(2, '0')}-${String(lastOrderDate.getDate()).padStart(2, '0')}`;
-                
-                return (
-                  <tr key={customer.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center text-gray-500">
-                          {customer.name.charAt(0)}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-sm text-gray-500">ID: #{customer.id}</div>
-                        </div>
+            {currentCustomers.length > 0 ? (
+              currentCustomers.map((customer) => (
+                <tr key={customer.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center text-gray-500">
+                        {customer.name.charAt(0)}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.name.toLowerCase().replace(/\s+/g, '.')}@example.com</div>
-                      <div className="text-sm text-gray-500">+1 {Math.floor(Math.random() * 900) + 100} {Math.floor(Math.random() * 900) + 100} {Math.floor(Math.random() * 900) + 100}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {ordersCount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge status={isActive ? 'active' : 'inactive'} />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formattedDate}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <ActionButtons 
-                        buttons={[
-                          { 
-                            icon: <Eye size={16} />, 
-                            tooltip: 'View', 
-                            color: 'info', 
-                            onClick: () => console.log(`View customer ${customer.id}`) 
-                          },
-                          { 
-                            icon: <Edit size={16} />, 
-                            tooltip: 'Edit', 
-                            color: 'success', 
-                            onClick: () => console.log(`Edit customer ${customer.id}`) 
-                          },
-                          { 
-                            icon: <Trash size={16} />, 
-                            tooltip: 'Delete', 
-                            color: 'danger', 
-                            onClick: () => console.log(`Delete customer ${customer.id}`) 
-                          }
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                );
-              })
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    #{customer.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      customer.type === 'NORMAL' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {customer.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <ActionButtons 
+                      buttons={[
+                        { 
+                          icon: <Eye size={16} />, 
+                          tooltip: 'View', 
+                          color: 'info', 
+                          onClick: () => console.log(`View customer ${customer.id}`) 
+                        },
+                        { 
+                          icon: <Edit size={16} />, 
+                          tooltip: 'Edit', 
+                          color: 'success', 
+                          onClick: () => console.log(`Edit customer ${customer.id}`) 
+                        },
+                        { 
+                          icon: <Trash size={16} />, 
+                          tooltip: 'Delete', 
+                          color: 'danger', 
+                          onClick: () => console.log(`Delete customer ${customer.id}`) 
+                        }
+                      ]}
+                    />
+                  </td>
+                </tr>
+              ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
                   No customers found
                 </td>
               </tr>
@@ -207,43 +202,93 @@ export default function CustomersPage() {
       </div>
       
       {/* Paginación */}
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
-        <div className="text-sm text-gray-700">
-          Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredCustomers.length}</span> of <span className="font-medium">{filteredCustomers.length}</span> results
+      {filteredCustomers.length > 0 && (
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
+          <div className="text-sm text-gray-700">
+            Showing <span className="font-medium">{indexOfFirstCustomer + 1}</span> to <span className="font-medium">
+              {Math.min(indexOfLastCustomer, filteredCustomers.length)}
+            </span> of <span className="font-medium">{filteredCustomers.length}</span> results
+          </div>
+          
+          <div className="flex items-center">
+            <nav className="relative z-0 inline-flex -space-x-px">
+              <button 
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              
+              {/* Renderizar botones de página */}
+              {Array.from({ length: Math.min(totalPages, 5) }).map((_, index) => {
+                // Mostrar las primeras 3 páginas, la página actual, y la última página
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  // Si hay 5 o menos páginas, mostrar todas
+                  pageNum = index + 1;
+                } else if (currentPage <= 3) {
+                  // Si estamos en las primeras 3 páginas
+                  if (index < 4) {
+                    pageNum = index + 1;
+                  } else {
+                    pageNum = totalPages;
+                  }
+                } else if (currentPage >= totalPages - 2) {
+                  // Si estamos en las últimas 3 páginas
+                  if (index === 0) {
+                    pageNum = 1;
+                  } else {
+                    pageNum = totalPages - 4 + index;
+                  }
+                } else {
+                  // Si estamos en el medio
+                  if (index === 0) {
+                    pageNum = 1;
+                  } else if (index === 4) {
+                    pageNum = totalPages;
+                  } else {
+                    pageNum = currentPage + index - 2;
+                  }
+                }
+                
+                // Si necesitamos mostrar puntos suspensivos en lugar de un número
+                if (index > 0 && index < 4 && 
+                    ((pageNum > 2 && pageNum < totalPages - 1 && pageNum !== currentPage - 1 && 
+                      pageNum !== currentPage && pageNum !== currentPage + 1))) {
+                  return (
+                    <span key={`ellipsis-${index}`} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                      ...
+                    </span>
+                  );
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => paginate(pageNum)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      currentPage === pageNum
+                        ? 'border-green-500 bg-green-50 text-green-600'
+                        : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              
+              <button 
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </nav>
+          </div>
         </div>
-        
-        <div className="flex items-center">
-          <nav className="relative z-0 inline-flex -space-x-px">
-            <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button className="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
-              1
-            </button>
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              2
-            </button>
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              3
-            </button>
-            <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-              ...
-            </span>
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              8
-            </button>
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              9
-            </button>
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              10
-            </button>
-            <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </nav>
-        </div>
-      </div>
+      )}
     </div>
   );
 } 
