@@ -65,26 +65,31 @@ export default function CustomerFormModal({
   initialData = { name: '', email: '' }
 }: CustomerFormModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [name, setName] = useState(initialData.name);
-  const [email, setEmail] = useState(initialData.email);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
 
   // Define el título basado en el modo
   const modalTitle = title || (isEditMode ? "Editar Cliente" : "Agregar Cliente");
 
-  // Actualizar los campos cuando cambian los datos iniciales (para edición)
+  // Initialize input values when modal opens or initialData changes
   useEffect(() => {
-    if (isOpen && isEditMode && initialData) {
-      setName(initialData.name);
-      setEmail(initialData.email);
+    if (isOpen) {
+      if (nameInputRef.current) {
+        nameInputRef.current.value = isEditMode ? initialData.name : '';
+      }
+      if (emailInputRef.current) {
+        emailInputRef.current.value = isEditMode ? initialData.email : '';
+      }
       setNameError('');
       setEmailError('');
-    } else if (isOpen && !isEditMode) {
-      setName('');
-      setEmail('');
-      setNameError('');
-      setEmailError('');
+      
+      // Focus the name input after a short delay
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
     }
   }, [isOpen, isEditMode, initialData]);
 
@@ -131,18 +136,20 @@ export default function CustomerFormModal({
 
   const validateForm = () => {
     let isValid = true;
+    const nameValue = nameInputRef.current?.value || '';
+    const emailValue = emailInputRef.current?.value || '';
     
-    if (!name.trim()) {
+    if (!nameValue.trim()) {
       setNameError('El nombre es requerido');
       isValid = false;
     } else {
       setNameError('');
     }
     
-    if (!email.trim()) {
+    if (!emailValue.trim()) {
       setEmailError('El email es requerido');
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/\S+@\S+\.\S+/.test(emailValue)) {
       setEmailError('Email inválido');
       isValid = false;
     } else {
@@ -156,32 +163,28 @@ export default function CustomerFormModal({
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit({ name, email });
+      onSubmit({ 
+        name: nameInputRef.current?.value || '', 
+        email: emailInputRef.current?.value || '' 
+      });
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>) => {
-    e.stopPropagation();
-    setter(e.target.value);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div 
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in duration-300 relative"
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden"
+        style={{ position: 'relative', zIndex: 9999 }}
       >
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">{modalTitle}</h3>
           <button 
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 rounded-full p-1"
-            aria-label="Close"
+            className="text-gray-400 hover:text-gray-500 focus:outline-none"
           >
             <X size={20} />
           </button>
@@ -197,15 +200,15 @@ export default function CustomerFormModal({
           
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="customer-name" className="block text-sm font-medium text-gray-700 mb-1">
                 Nombre
               </label>
               <input
+                ref={nameInputRef}
+                id="customer-name"
                 type="text"
-                id="name"
-                value={name}
-                onChange={(e) => handleInputChange(e, setName)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${
+                defaultValue={isEditMode ? initialData.name : ''}
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none ${
                   nameError ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Ingrese el nombre"
@@ -216,15 +219,15 @@ export default function CustomerFormModal({
             </div>
             
             <div className="mb-6">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="customer-email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
+                ref={emailInputRef}
+                id="customer-email"
                 type="email"
-                id="email"
-                value={email}
-                onChange={(e) => handleInputChange(e, setEmail)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${
+                defaultValue={isEditMode ? initialData.email : ''}
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none ${
                   emailError ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Ingrese el email"
@@ -238,7 +241,7 @@ export default function CustomerFormModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none"
                 disabled={isLoading}
               >
                 Cancelar
@@ -246,7 +249,7 @@ export default function CustomerFormModal({
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`px-4 py-2 bg-green-600 hover:bg-green-700 focus:ring-green-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg focus:outline-none ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {isLoading ? (
                   <>
