@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { Customer } from "../types";
-import { fetchCustomers, deleteCustomer } from "../api/customerApi";
+import {
+  fetchCustomers,
+  deleteCustomer,
+  createCustomer,
+  updateCustomer,
+  CustomerData,
+} from "../api/customerApi";
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -8,6 +14,10 @@ export const useCustomers = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const getCustomers = async () => {
     setLoading(true);
@@ -45,6 +55,59 @@ export const useCustomers = () => {
     }
   };
 
+  const handleCreateCustomer = async (customerData: CustomerData) => {
+    setIsCreating(true);
+    setCreateError(null);
+    try {
+      const newCustomer = await createCustomer(customerData);
+      if (newCustomer) {
+        // Actualizar estado local para incluir el nuevo cliente
+        setCustomers((prev) => [...prev, newCustomer]);
+        return true;
+      } else {
+        setCreateError("No se pudo crear el cliente");
+        return false;
+      }
+    } catch (err) {
+      setCreateError(
+        err instanceof Error ? err.message : "Error al crear el cliente"
+      );
+      return false;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleUpdateCustomer = async (
+    id: number,
+    customerData: CustomerData
+  ) => {
+    setIsUpdating(true);
+    setUpdateError(null);
+    try {
+      const updatedCustomer = await updateCustomer(id, customerData);
+      if (updatedCustomer) {
+        // Actualizar estado local para reflejar la actualización
+        setCustomers((prev) =>
+          prev.map((customer) =>
+            customer.id === id ? { ...customer, ...updatedCustomer } : customer
+          )
+        );
+        return true;
+      } else {
+        setUpdateError("No se pudo actualizar el cliente");
+        return false;
+      }
+    } catch (err) {
+      setUpdateError(
+        err instanceof Error ? err.message : "Error al actualizar el cliente"
+      );
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   useEffect(() => {
     getCustomers();
   }, []);
@@ -55,7 +118,13 @@ export const useCustomers = () => {
     error,
     isDeleting,
     deleteError,
+    isCreating,
+    createError,
+    isUpdating,
+    updateError,
     refreshCustomers: getCustomers,
     deleteCustomer: handleDeleteCustomer,
+    createCustomer: handleCreateCustomer,
+    updateCustomer: handleUpdateCustomer,
   };
 };

@@ -7,6 +7,7 @@ import { PrimaryButton } from '@/shared/components/buttons/primary-button';
 import { StatCard } from '@/shared/components/cards/stat-card';
 import { ActionButtons } from '@/shared/components/buttons/action-buttons';
 import { ConfirmationModal } from '@/shared/components/modals/confirmation-modal';
+import { CustomerFormModal } from '@/shared/components/modals/customer-form-modal';
 import { Toast } from '@/shared/components/alerts/toast';
 import { ToastContainer } from '@/shared/components/alerts/toast-container';
 import { 
@@ -16,20 +17,33 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Edit,
   Trash
 } from 'lucide-react';
+import { CustomerData } from '@/modules/customers/api/customerApi';
 
 // Número de clientes a mostrar por página
-const CUSTOMERS_PER_PAGE = 6;
+const CUSTOMERS_PER_PAGE = parseInt(process.env.NEXT_PUBLIC_ITEMS_PER_PAGE || '6', 10);
 
 export default function CustomersPage() {
-  const { customers, loading, error, deleteCustomer } = useCustomers();
+  const { 
+    customers, 
+    loading, 
+    error, 
+    deleteCustomer, 
+    createCustomer, 
+    updateCustomer,
+    isCreating,
+    isUpdating
+  } = useCustomers();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [customerToEdit, setCustomerToEdit] = useState<{ id: number, name: string, email: string } | null>(null);
   const [toast, setToast] = useState<{
     show: boolean;
     type: 'success' | 'error';
@@ -58,11 +72,12 @@ export default function CustomersPage() {
   
   // Calcular estadísticas
   const totalCustomers = customers.length;
-  const activeCustomers = customers.filter(c => c.type === 'NORMAL').length;
-  const inactiveCustomers = totalCustomers - activeCustomers;
+  const activeCustomers = customers.filter(c => c.active).length;
+  const frecuentCustomers = customers.filter(c => c.type === 'FRECUENT').length;
   
-  // Datos de pedidos (por ahora solo mostramos cantidad estimada)
-  const totalOrders = totalCustomers > 0 ? totalCustomers * 2 : 0; // Estimación simple
+  // Calcular el total de órdenes para todos los clientes
+  const totalOrders = customers.reduce((sum, customer) => 
+    sum + (customer.orders?.length || 0), 0);
 
   // Función para mostrar un toast
   const showToast = (type: 'success' | 'error', message: string) => {
@@ -73,6 +88,17 @@ export default function CustomersPage() {
   const handleDeleteClick = (customer: { id: number, name: string }) => {
     setCustomerToDelete(customer);
     setDeleteModalOpen(true);
+  };
+
+  // Función para abrir el modal de añadir cliente
+  const handleAddClick = () => {
+    setAddModalOpen(true);
+  };
+
+  // Función para abrir el modal de edición
+  const handleEditClick = (customer: { id: number, name: string, email: string }) => {
+    setCustomerToEdit(customer);
+    setEditModalOpen(true);
   };
 
   // Función para confirmar la eliminación
@@ -91,6 +117,34 @@ export default function CustomersPage() {
     }
   };
 
+  // Función para manejar el envío del formulario de añadir cliente
+  const handleAddCustomer = async (data: CustomerData) => {
+    const success = await createCustomer(data);
+    setAddModalOpen(false);
+    
+    if (success) {
+      showToast('success', `Cliente "${data.name}" creado exitosamente`);
+    } else {
+      showToast('error', `Error al crear el cliente "${data.name}"`);
+    }
+  };
+
+  // Función para manejar el envío del formulario de editar cliente
+  const handleEditCustomer = async (data: CustomerData) => {
+    if (customerToEdit) {
+      const success = await updateCustomer(customerToEdit.id, data);
+      setEditModalOpen(false);
+      
+      if (success) {
+        showToast('success', `Cliente "${data.name}" actualizado exitosamente`);
+      } else {
+        showToast('error', `Error al actualizar el cliente "${data.name}"`);
+      }
+      
+      setCustomerToEdit(null);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Encabezado y controles */}
@@ -104,7 +158,7 @@ export default function CustomersPage() {
             value={searchTerm}
           />
           
-          <PrimaryButton onClick={() => console.log('Add customer clicked')}>
+          <PrimaryButton onClick={handleAddClick}>
             Add Customer
           </PrimaryButton>
         </div>
@@ -116,7 +170,7 @@ export default function CustomersPage() {
           icon={<Users size={18} />}
           value={totalCustomers}
           title="Total Customers"
-          changeText={`+3 this week`}
+          changeText={`${totalCustomers > 0 ? '+' : ''}${totalCustomers} customers`}
           changeType="positive"
           iconBgColor="bg-green-50"
           iconColor="text-green-600"
@@ -126,7 +180,7 @@ export default function CustomersPage() {
           icon={<UserCheck size={18} />}
           value={activeCustomers}
           title="Active Customers"
-          changeText={`+2 this week`}
+          changeText={`${activeCustomers} active`}
           changeType="positive"
           iconBgColor="bg-blue-50"
           iconColor="text-blue-600"
@@ -134,22 +188,22 @@ export default function CustomersPage() {
         
         <StatCard 
           icon={<UserX size={18} />}
-          value={inactiveCustomers}
-          title="Inactive Customers"
-          changeText={`+1 this week`}
+          value={frecuentCustomers}
+          title="Frequent Customers"
+          changeText={`${frecuentCustomers} frequent`}
           changeType="neutral"
-          iconBgColor="bg-amber-50"
-          iconColor="text-amber-600"
+          iconBgColor="bg-purple-50"
+          iconColor="text-purple-600"
         />
         
         <StatCard 
           icon={<ShoppingBag size={18} />}
           value={totalOrders}
           title="Total Orders"
-          changeText={`+8 this week`}
+          changeText={`${totalOrders} orders`}
           changeType="positive"
-          iconBgColor="bg-purple-50"
-          iconColor="text-purple-600"
+          iconBgColor="bg-amber-50"
+          iconColor="text-amber-600"
         />
       </div>
       
@@ -171,10 +225,19 @@ export default function CustomersPage() {
                 Customer
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ID
+                Email
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Orders
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Last Order
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -183,57 +246,87 @@ export default function CustomersPage() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {currentCustomers.length > 0 ? (
-              currentCustomers.map((customer) => (
-                <tr key={customer.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center text-gray-500">
-                        {customer.name.charAt(0)}
+              currentCustomers.map((customer) => {
+                // Calcular la fecha de la última orden si existen órdenes
+                let formattedDate = 'N/A';
+                let ordersCount = 0;
+                
+                // Usar técnica de renderizado estable para evitar errores de hidratación
+                if (typeof window !== 'undefined' && customer.orders && customer.orders.length > 0) {
+                  ordersCount = customer.orders.length;
+                  const lastOrderDate = new Date(customer.orders.sort((a, b) => 
+                    new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+                  )[0].orderDate);
+                  
+                  formattedDate = `${lastOrderDate.getFullYear()}-${String(lastOrderDate.getMonth() + 1).padStart(2, '0')}-${String(lastOrderDate.getDate()).padStart(2, '0')}`;
+                } else {
+                  ordersCount = customer.orders?.length || 0;
+                }
+                
+                return (
+                  <tr key={customer.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center text-gray-500">
+                          {customer.name.charAt(0)}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-xs text-gray-500">ID: #{customer.id}</div>
+                        </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    #{customer.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      customer.type === 'NORMAL' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
-                    }`}>
-                      {customer.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <ActionButtons 
-                      buttons={[
-                        { 
-                          icon: <Eye size={16} />, 
-                          tooltip: 'View', 
-                          color: 'info', 
-                          onClick: () => console.log(`View customer ${customer.id}`) 
-                        },
-                        { 
-                          icon: <Edit size={16} />, 
-                          tooltip: 'Edit', 
-                          color: 'success', 
-                          onClick: () => console.log(`Edit customer ${customer.id}`) 
-                        },
-                        { 
-                          icon: <Trash size={16} />, 
-                          tooltip: 'Delete', 
-                          color: 'danger', 
-                          onClick: () => handleDeleteClick({ id: customer.id, name: customer.name }) 
-                        }
-                      ]}
-                    />
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {customer.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        customer.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {customer.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        customer.type === 'FRECUENT' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {customer.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {ordersCount}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formattedDate}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <ActionButtons 
+                        buttons={[
+                          { 
+                            icon: <Edit size={16} />, 
+                            tooltip: 'Edit', 
+                            color: 'success', 
+                            onClick: () => handleEditClick({ 
+                              id: customer.id, 
+                              name: customer.name, 
+                              email: customer.email 
+                            }) 
+                          },
+                          { 
+                            icon: <Trash size={16} />, 
+                            tooltip: 'Delete', 
+                            color: 'danger', 
+                            onClick: () => handleDeleteClick({ id: customer.id, name: customer.name }) 
+                          }
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                   No customers found
                 </td>
               </tr>
@@ -343,6 +436,27 @@ export default function CustomersPage() {
         message="¿Está seguro que desea eliminar a este cliente?"
         highlightedItem={customerToDelete?.name}
         type="delete"
+      />
+      
+      {/* Modal para agregar cliente */}
+      <CustomerFormModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSubmit={handleAddCustomer}
+        isLoading={isCreating}
+      />
+      
+      {/* Modal para editar cliente */}
+      <CustomerFormModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setCustomerToEdit(null);
+        }}
+        onSubmit={handleEditCustomer}
+        isLoading={isUpdating}
+        isEditMode={true}
+        initialData={customerToEdit || { name: '', email: '' }}
       />
       
       {/* Toast Container */}
