@@ -12,3 +12,9 @@ export * from "./data-display";
 
 // Export form components
 export * from "./forms";
+
+// Export modal components
+export * from "./modals";
+
+// Export alert components
+export * from "./alerts";

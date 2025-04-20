@@ -148,10 +148,10 @@ export default function ConfirmationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 overflow-hidden animate-in fade-in duration-300"
+        className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in duration-300 pointer-events-auto"
       >
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>

@@ -29,3 +29,21 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
     return MOCK_CUSTOMERS;
   }
 };
+
+export const deleteCustomer = async (id: number): Promise<boolean> => {
+  try {
+    const response = await fetch(`${CUSTOMER_ENDPOINT}/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error deleting customer: ${response.statusText}`);
+    }
+
+    console.log(`Customer with ID ${id} deleted successfully`);
+    return true;
+  } catch (error) {
+    console.error(`Error deleting customer with ID ${id}:`, error);
+    return false;
+  }
+};

@@ -6,6 +6,9 @@ import { SearchInput } from '@/shared/components/forms/search-input';
 import { PrimaryButton } from '@/shared/components/buttons/primary-button';
 import { StatCard } from '@/shared/components/cards/stat-card';
 import { ActionButtons } from '@/shared/components/buttons/action-buttons';
+import { ConfirmationModal } from '@/shared/components/modals/confirmation-modal';
+import { Toast } from '@/shared/components/alerts/toast';
+import { ToastContainer } from '@/shared/components/alerts/toast-container';
 import { 
   Users, 
   UserCheck, 
@@ -22,9 +25,20 @@ import {
 const CUSTOMERS_PER_PAGE = 6;
 
 export default function CustomersPage() {
-  const { customers, loading, error } = useCustomers();
+  const { customers, loading, error, deleteCustomer } = useCustomers();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [toast, setToast] = useState<{
+    show: boolean;
+    type: 'success' | 'error';
+    message: string;
+  }>({
+    show: false,
+    type: 'success',
+    message: '',
+  });
   
   // Filtrar clientes por término de búsqueda
   const filteredCustomers = customers.filter(c => 
@@ -49,6 +63,33 @@ export default function CustomersPage() {
   
   // Datos de pedidos (por ahora solo mostramos cantidad estimada)
   const totalOrders = totalCustomers > 0 ? totalCustomers * 2 : 0; // Estimación simple
+
+  // Función para mostrar un toast
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ show: true, type, message });
+  };
+
+  // Función para abrir el modal de eliminación
+  const handleDeleteClick = (customer: { id: number, name: string }) => {
+    setCustomerToDelete(customer);
+    setDeleteModalOpen(true);
+  };
+
+  // Función para confirmar la eliminación
+  const confirmDelete = async () => {
+    if (customerToDelete) {
+      const success = await deleteCustomer(customerToDelete.id);
+      setDeleteModalOpen(false);
+      
+      if (success) {
+        showToast('success', `Cliente "${customerToDelete.name}" eliminado exitosamente`);
+      } else {
+        showToast('error', `Error al eliminar el cliente "${customerToDelete.name}"`);
+      }
+      
+      setCustomerToDelete(null);
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -183,7 +224,7 @@ export default function CustomersPage() {
                           icon: <Trash size={16} />, 
                           tooltip: 'Delete', 
                           color: 'danger', 
-                          onClick: () => console.log(`Delete customer ${customer.id}`) 
+                          onClick: () => handleDeleteClick({ id: customer.id, name: customer.name }) 
                         }
                       ]}
                     />
@@ -289,6 +330,31 @@ export default function CustomersPage() {
           </div>
         </div>
       )}
+      
+      {/* Modal de confirmación para eliminar */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setCustomerToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Confirmar eliminación"
+        message="¿Está seguro que desea eliminar a este cliente?"
+        highlightedItem={customerToDelete?.name}
+        type="delete"
+      />
+      
+      {/* Toast Container */}
+      <ToastContainer position="top-right">
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          isVisible={toast.show}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+          duration={4000}
+        />
+      </ToastContainer>
     </div>
   );
 } 
