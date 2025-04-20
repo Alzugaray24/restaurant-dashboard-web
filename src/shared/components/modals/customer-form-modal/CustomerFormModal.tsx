@@ -160,15 +160,21 @@ export default function CustomerFormModal({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>) => {
+    e.stopPropagation();
+    setter(e.target.value);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div 
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in duration-300 relative pointer-events-auto"
+        className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in duration-300 relative"
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">{modalTitle}</h3>
@@ -198,12 +204,13 @@ export default function CustomerFormModal({
                 type="text"
                 id="name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => handleInputChange(e, setName)}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${
                   nameError ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Ingrese el nombre"
                 disabled={isLoading}
+                autoComplete="off"
               />
               {nameError && <p className="mt-1 text-xs text-red-600">{nameError}</p>}
             </div>
@@ -216,12 +223,13 @@ export default function CustomerFormModal({
                 type="email"
                 id="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleInputChange(e, setEmail)}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${
                   emailError ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Ingrese el email"
                 disabled={isLoading}
+                autoComplete="off"
               />
               {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
             </div>
