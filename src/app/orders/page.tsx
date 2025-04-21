@@ -1,14 +1,38 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { useOrders } from '@/modules/orders/hooks';
+
+// Import the component with noSSR to avoid hydration issues with browser extensions
+const OrderList = dynamic(
+  () => import('@/modules/orders/views').then((mod) => mod.OrderList),
+  { ssr: false }
+);
+
+// Separate logging component to avoid interference with the main component
+function OrdersLogger() {
+  const { orders, loading, error } = useOrders();
+
+  useEffect(() => {
+    if (!loading) {
+      console.log('Orders data from API:', orders);
+      if (error) {
+        console.error('Error fetching orders:', error);
+      }
+    }
+  }, [orders, loading, error]);
+
+  return null;
+}
 
 export default function OrdersPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Orders</h1>
-      <p className="text-gray-500">
-        This page will display the orders management interface. Coming soon!
-      </p>
-    </div>
+    <>
+      <OrdersLogger />
+      <Suspense fallback={<div className="p-6">Loading orders...</div>}>
+        <OrderList />
+      </Suspense>
+    </>
   );
 } 
