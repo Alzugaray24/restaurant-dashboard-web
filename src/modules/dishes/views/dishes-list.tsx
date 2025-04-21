@@ -10,6 +10,7 @@ import { ConfirmationModal } from '@/shared/components/modals/confirmation-modal
 import { DishFormModal } from '@/shared/components/modals/dish-form-modal';
 import { Toast } from '@/shared/components/alerts/toast';
 import { ToastContainer } from '@/shared/components/alerts/toast-container';
+import Loader from '@/shared/components/loader';
 import { 
   UtensilsCrossed, 
   Utensils, 
@@ -261,7 +262,7 @@ export function DishList() {
         />
       </div>
       
-      {loading && <p className="text-center py-4">Loading dishes...</p>}
+      {loading && <Loader text="Cargando platillos..." />}
       
       {error && (
         <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-6">

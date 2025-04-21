@@ -2,6 +2,7 @@
 
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import Loader from '@/shared/components/loader';
 
 // Import the component with noSSR to avoid hydration issues with browser extensions
 const CustomersList = dynamic(
@@ -11,7 +12,7 @@ const CustomersList = dynamic(
 
 export default function CustomersPage() {
   return (
-    <Suspense fallback={<div className="p-6">Loading customers...</div>}>
+    <Suspense fallback={<div className="min-h-[500px]"><Loader text="Cargando clientes..." /></div>}>
       <CustomersList />
     </Suspense>
   );

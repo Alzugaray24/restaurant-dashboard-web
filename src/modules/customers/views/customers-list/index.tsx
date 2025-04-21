@@ -10,6 +10,7 @@ import { ConfirmationModal } from '@/shared/components/modals/confirmation-modal
 import { CustomerFormModal } from '@/shared/components/modals/customer-form-modal';
 import { Toast } from '@/shared/components/alerts/toast';
 import { ToastContainer } from '@/shared/components/alerts/toast-container';
+import Loader from '@/shared/components/loader';
 import { 
   Users, 
   UserCheck, 
@@ -252,7 +253,7 @@ export function CustomersList() {
         />
       </div>
       
-      {loading && <p className="text-center py-4">Loading customers...</p>}
+      {loading && <Loader text="Cargando clientes..." />}
       
       {error && (
         <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-6">

@@ -7,6 +7,7 @@ import { StatCard } from '@/shared/components/cards/stat-card';
 import { ActionButtons } from '@/shared/components/buttons/action-buttons';
 import { Toast } from '@/shared/components/alerts/toast';
 import { ToastContainer } from '@/shared/components/alerts/toast-container';
+import Loader from '@/shared/components/loader';
 import { 
   ShoppingBag, 
   Clock, 
@@ -141,7 +142,7 @@ export function OrderList() {
         />
       </div>
       
-      {loading && <p className="text-center py-4">Loading orders...</p>}
+      {loading && <Loader text="Cargando órdenes..." />}
       
       {error && (
         <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-6">

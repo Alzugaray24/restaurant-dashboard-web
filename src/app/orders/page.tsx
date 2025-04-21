@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useOrders } from '@/modules/orders/hooks';
+import Loader from '@/shared/components/loader';
 
 // Import the component with noSSR to avoid hydration issues with browser extensions
 const OrderList = dynamic(
@@ -30,7 +31,7 @@ export default function OrdersPage() {
   return (
     <>
       <OrdersLogger />
-      <Suspense fallback={<div className="p-6">Loading orders...</div>}>
+      <Suspense fallback={<div className="min-h-[500px]"><Loader text="Cargando órdenes..." /></div>}>
         <OrderList />
       </Suspense>
     </>
