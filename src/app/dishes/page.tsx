@@ -1,5 +1,7 @@
 'use client';
 
+
+
 import React, { useState } from 'react';
 import { useDishes } from '@/modules/dishes/hooks';
 import { SearchInput } from '@/shared/components/forms/search-input';
