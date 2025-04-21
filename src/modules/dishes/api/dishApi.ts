@@ -8,30 +8,35 @@ const MOCK_DISHES: Dish[] = [
     name: "Tiramisú a la Criolla",
     price: 1473,
     type: "COMMON",
+    active: true,
   },
   {
     id: 2,
     name: "Risotto Especial",
     price: 2160,
     type: "COMMON",
+    active: true,
   },
   {
     id: 3,
     name: "Risotto Tradicional",
     price: 4431,
     type: "COMMON",
+    active: false,
   },
   {
     id: 4,
     name: "Ensalada Mediterránea",
     price: 1850,
     type: "VEGETARIAN",
+    active: true,
   },
   {
     id: 5,
     name: "Pasta al Pesto",
     price: 2400,
     type: "VEGETARIAN",
+    active: false,
   },
 ];
 
@@ -130,5 +135,41 @@ export const updateDish = async (
   } catch (error) {
     console.error(`Error updating dish with ID ${id}:`, error);
     return null;
+  }
+};
+
+export const updateDishStatus = async (id: number): Promise<boolean> => {
+  try {
+    // Buscar el plato actual para obtener el valor inverso de active
+    const currentDish = MOCK_DISHES.find((d) => d.id === id);
+    const newActiveStatus = currentDish ? !currentDish.active : true;
+
+    const response = await fetch(
+      `${DISH_ENDPOINT}/${id}/status?active=${newActiveStatus}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error updating dish status: ${response.statusText}`);
+    }
+
+    console.log(`Dish with ID ${id} status updated successfully`);
+    return true;
+  } catch (error) {
+    console.error(`Error updating status for dish with ID ${id}:`, error);
+
+    // Devolver datos simulados cuando la API no está disponible
+    const dish = MOCK_DISHES.find((d) => d.id === id);
+    if (dish) {
+      dish.active = !dish.active;
+      return true;
+    }
+
+    return false;
   }
 };

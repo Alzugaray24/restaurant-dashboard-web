@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit,
-  Trash
+  Power
 } from 'lucide-react';
 import { CustomerData } from '@/modules/customers/api/customerApi';
 
@@ -30,20 +30,21 @@ export default function CustomersPage() {
     customers, 
     loading, 
     error, 
-    deleteCustomer, 
     createCustomer, 
     updateCustomer,
+    updateCustomerStatus,
     isCreating,
-    isUpdating
+    isUpdating,
   } = useCustomers();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<{ id: number, name: string } | null>(null);
-  const [customerToEdit, setCustomerToEdit] = useState<{ id: number, name: string, email: string } | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<{ id: number, name: string, active: boolean } | null>(null);
+  const [customerToEdit, setCustomerToEdit] = useState<{ id: number, name: string, email: string, type: string } | null>(null);
   const [toast, setToast] = useState<{
     show: boolean;
     type: 'success' | 'error';
@@ -54,9 +55,10 @@ export default function CustomersPage() {
     message: '',
   });
   
-  // Filtrar clientes por término de búsqueda
+  // Filtrar clientes por término de búsqueda y estado activo
   const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+    (showActiveOnly ? c.active : !c.active)
   );
 
   // Calcular el total de páginas
@@ -84,9 +86,9 @@ export default function CustomersPage() {
     setToast({ show: true, type, message });
   };
 
-  // Función para abrir el modal de eliminación
-  const handleDeleteClick = (customer: { id: number, name: string }) => {
-    setCustomerToDelete(customer);
+  // Función para abrir el modal de eliminación (ahora cambia estado)
+  const handleStatusChangeClick = (customer: { id: number, name: string, active: boolean }) => {
+    setCustomerToDelete({...customer});
     setDeleteModalOpen(true);
   };
 
@@ -96,21 +98,22 @@ export default function CustomersPage() {
   };
 
   // Función para abrir el modal de edición
-  const handleEditClick = (customer: { id: number, name: string, email: string }) => {
+  const handleEditClick = (customer: { id: number, name: string, email: string, type: string }) => {
     setCustomerToEdit(customer);
     setEditModalOpen(true);
   };
 
-  // Función para confirmar la eliminación
-  const confirmDelete = async () => {
+  // Función para confirmar el cambio de estado
+  const confirmStatusChange = async () => {
     if (customerToDelete) {
-      const success = await deleteCustomer(customerToDelete.id);
+      const success = await updateCustomerStatus(customerToDelete.id);
       setDeleteModalOpen(false);
       
       if (success) {
-        showToast('success', `Cliente "${customerToDelete.name}" eliminado exitosamente`);
+        const newStatus = !customerToDelete.active ? 'activado' : 'desactivado';
+        showToast('success', `Cliente "${customerToDelete.name}" ${newStatus} exitosamente`);
       } else {
-        showToast('error', `Error al eliminar el cliente "${customerToDelete.name}"`);
+        showToast('error', `Error al cambiar el estado del cliente "${customerToDelete.name}"`);
       }
       
       setCustomerToDelete(null);
@@ -145,6 +148,12 @@ export default function CustomersPage() {
     }
   };
 
+  // Función para alternar entre mostrar solo activos o todos
+  const toggleActiveFilter = () => {
+    setShowActiveOnly(!showActiveOnly);
+    setCurrentPage(1); // Resetear a la primera página cuando cambiamos el filtro
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Encabezado y controles */}
@@ -157,6 +166,17 @@ export default function CustomersPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             value={searchTerm}
           />
+          
+          <button
+            onClick={toggleActiveFilter}
+            className={`px-4 py-2 rounded-lg border transition-colors ${
+              showActiveOnly 
+                ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200' 
+                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+            }`}
+          >
+            {showActiveOnly ? 'Show Inactive' : 'Show Active'}
+          </button>
           
           <PrimaryButton onClick={handleAddClick}>
             Add Customer
@@ -309,14 +329,19 @@ export default function CustomersPage() {
                             onClick: () => handleEditClick({ 
                               id: customer.id, 
                               name: customer.name, 
-                              email: customer.email 
+                              email: customer.email,
+                              type: customer.type
                             }) 
                           },
                           { 
-                            icon: <Trash size={16} />, 
-                            tooltip: 'Delete', 
-                            color: 'danger', 
-                            onClick: () => handleDeleteClick({ id: customer.id, name: customer.name }) 
+                            icon: <Power size={16} />, 
+                            tooltip: customer.active ? 'Deactivate' : 'Activate', 
+                            color: customer.active ? 'warning' : 'success', 
+                            onClick: () => handleStatusChangeClick({ 
+                              id: customer.id, 
+                              name: customer.name,
+                              active: customer.active
+                            }) 
                           }
                         ]}
                       />
@@ -424,18 +449,18 @@ export default function CustomersPage() {
         </div>
       )}
       
-      {/* Modal de confirmación para eliminar */}
+      {/* Modal de confirmación para cambiar estado */}
       <ConfirmationModal
         isOpen={deleteModalOpen}
         onClose={() => {
           setDeleteModalOpen(false);
           setCustomerToDelete(null);
         }}
-        onConfirm={confirmDelete}
-        title="Confirmar eliminación"
-        message="¿Está seguro que desea eliminar a este cliente?"
+        onConfirm={confirmStatusChange}
+        title="Confirmar cambio de estado"
+        message={`¿Está seguro que desea ${customerToDelete?.active ? 'desactivar' : 'activar'} a este cliente?`}
         highlightedItem={customerToDelete?.name}
-        type="delete"
+        type="warning"
       />
       
       {/* Modal para agregar cliente */}
@@ -456,7 +481,7 @@ export default function CustomersPage() {
         onSubmit={handleEditCustomer}
         isLoading={isUpdating}
         isEditMode={true}
-        initialData={customerToEdit || { name: '', email: '' }}
+        initialData={customerToEdit || { name: '', email: '', type: 'NORMAL' }}
       />
       
       {/* Toast Container */}

@@ -1,7 +1,5 @@
 'use client';
 
-
-
 import React, { useState } from 'react';
 import { useDishes } from '@/modules/dishes/hooks';
 import { SearchInput } from '@/shared/components/forms/search-input';
@@ -20,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit,
-  Trash
+  Power
 } from 'lucide-react';
 import { DishData } from '@/modules/dishes/api';
 
@@ -32,19 +30,20 @@ export default function DishesPage() {
     dishes, 
     loading, 
     error, 
-    deleteDish, 
     createDish, 
     updateDish,
+    updateDishStatus,
     isCreating,
     isUpdating
   } = useDishes();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [dishToDelete, setDishToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [dishToDelete, setDishToDelete] = useState<{ id: number, name: string, active: boolean } | null>(null);
   const [dishToEdit, setDishToEdit] = useState<{ id: number, name: string, price: number, type: string } | null>(null);
   const [toast, setToast] = useState<{
     show: boolean;
@@ -56,9 +55,10 @@ export default function DishesPage() {
     message: '',
   });
   
-  // Filtrar platos por término de búsqueda
+  // Filtrar platos por término de búsqueda y estado activo
   const filteredDishes = dishes.filter(d => 
-    d.name.toLowerCase().includes(searchTerm.toLowerCase())
+    d.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+    (showActiveOnly ? d.active : !d.active)
   );
 
   // Calcular el total de páginas
@@ -96,10 +96,10 @@ export default function DishesPage() {
     setToast({ show: true, type, message });
   };
 
-  // Función para abrir el modal de eliminación
-  const handleDeleteClick = (dish: { id: number, name: string }) => {
-    setDishToDelete(dish);
-    setDeleteModalOpen(true);
+  // Función para alternar entre mostrar solo activos o todos
+  const toggleActiveFilter = () => {
+    setShowActiveOnly(!showActiveOnly);
+    setCurrentPage(1); // Resetear a la primera página cuando cambiamos el filtro
   };
 
   // Función para abrir el modal de añadir plato
@@ -113,16 +113,23 @@ export default function DishesPage() {
     setEditModalOpen(true);
   };
 
-  // Función para confirmar la eliminación
-  const confirmDelete = async () => {
+  // Función para abrir el modal de cambio de estado
+  const handleStatusChangeClick = (dish: { id: number, name: string, active: boolean }) => {
+    setDishToDelete(dish);
+    setDeleteModalOpen(true);
+  };
+
+  // Función para confirmar el cambio de estado
+  const confirmStatusChange = async () => {
     if (dishToDelete) {
-      const success = await deleteDish(dishToDelete.id);
+      const success = await updateDishStatus(dishToDelete.id);
       setDeleteModalOpen(false);
       
       if (success) {
-        showToast('success', `Plato "${dishToDelete.name}" eliminado exitosamente`);
+        const newStatus = !dishToDelete.active ? 'activado' : 'desactivado';
+        showToast('success', `Plato "${dishToDelete.name}" ${newStatus} exitosamente`);
       } else {
-        showToast('error', `Error al eliminar el plato "${dishToDelete.name}"`);
+        showToast('error', `Error al cambiar el estado del plato "${dishToDelete.name}"`);
       }
       
       setDishToDelete(null);
@@ -193,6 +200,17 @@ export default function DishesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             value={searchTerm}
           />
+          
+          <button
+            onClick={toggleActiveFilter}
+            className={`px-4 py-2 rounded-lg border transition-colors ${
+              showActiveOnly 
+                ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200' 
+                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+            }`}
+          >
+            {showActiveOnly ? 'Show Inactive' : 'Show Active'}
+          </button>
           
           <PrimaryButton onClick={handleAddClick}>
             Add Dish
@@ -267,6 +285,9 @@ export default function DishesPage() {
                 Price
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -288,6 +309,13 @@ export default function DishesPage() {
                     <div className="text-sm text-gray-900">{formatPrice(dish.price)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      dish.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {dish.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     {renderDishType(dish.type)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -295,15 +323,19 @@ export default function DishesPage() {
                       buttons={[
                         { 
                           icon: <Edit size={16} />, 
-                          tooltip: 'Editar', 
+                          tooltip: 'Edit', 
                           color: 'success', 
                           onClick: () => handleEditClick(dish) 
                         },
                         { 
-                          icon: <Trash size={16} />, 
-                          tooltip: 'Eliminar', 
-                          color: 'danger', 
-                          onClick: () => handleDeleteClick(dish) 
+                          icon: <Power size={16} />, 
+                          tooltip: dish.active ? 'Deactivate' : 'Activate', 
+                          color: dish.active ? 'warning' : 'success', 
+                          onClick: () => handleStatusChangeClick({
+                            id: dish.id,
+                            name: dish.name,
+                            active: dish.active
+                          }) 
                         }
                       ]}
                     />
@@ -414,11 +446,11 @@ export default function DishesPage() {
       <ConfirmationModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Confirm deletion"
-        message="Are you sure you want to delete this dish?"
+        onConfirm={confirmStatusChange}
+        title="Confirmar cambio de estado"
+        message={`¿Está seguro que desea ${dishToDelete?.active ? 'desactivar' : 'activar'} este plato?`}
         highlightedItem={dishToDelete?.name}
-        type="delete"
+        type="warning"
       />
       
       <DishFormModal

@@ -81,6 +81,7 @@ export const deleteCustomer = async (id: number): Promise<boolean> => {
 export interface CustomerData {
   name: string;
   email: string;
+  type?: string;
 }
 
 export type CreateCustomerData = CustomerData;
@@ -134,5 +135,33 @@ export const updateCustomer = async (
   } catch (error) {
     console.error(`Error updating customer with ID ${id}:`, error);
     return null;
+  }
+};
+
+export const updateCustomerStatus = async (id: number): Promise<boolean> => {
+  try {
+    // Buscar el cliente actual para obtener el valor inverso de active
+    const currentCustomer = MOCK_CUSTOMERS.find((c) => c.id === id);
+    const newActiveStatus = currentCustomer ? !currentCustomer.active : true;
+
+    const response = await fetch(
+      `${CUSTOMER_ENDPOINT}/${id}/status?active=${newActiveStatus}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error updating customer status: ${response.statusText}`);
+    }
+
+    console.log(`Customer with ID ${id} status updated successfully`);
+    return true;
+  } catch (error) {
+    console.error(`Error updating status for customer with ID ${id}:`, error);
+    return false;
   }
 };

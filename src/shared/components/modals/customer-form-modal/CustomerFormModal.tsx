@@ -17,7 +17,7 @@ export interface CustomerFormModalProps {
   /**
    * Función que se ejecuta al enviar el formulario
    */
-  onSubmit: (data: { name: string; email: string }) => void;
+  onSubmit: (data: { name: string; email: string; type?: string }) => void;
   
   /**
    * Título del modal
@@ -40,6 +40,7 @@ export interface CustomerFormModalProps {
   initialData?: {
     name: string;
     email: string;
+    type?: string;
   };
 }
 
@@ -62,7 +63,7 @@ export default function CustomerFormModal({
   title,
   isLoading = false,
   isEditMode = false,
-  initialData = { name: '', email: '' }
+  initialData = { name: '', email: '', type: 'NORMAL' }
 }: CustomerFormModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +71,7 @@ export default function CustomerFormModal({
   
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [selectedType, setSelectedType] = useState(initialData.type || 'NORMAL');
 
   // Define el título basado en el modo
   const modalTitle = title || (isEditMode ? "Editar Cliente" : "Agregar Cliente");
@@ -83,6 +85,7 @@ export default function CustomerFormModal({
       if (emailInputRef.current) {
         emailInputRef.current.value = isEditMode ? initialData.email : '';
       }
+      setSelectedType(isEditMode && initialData.type ? initialData.type : 'NORMAL');
       setNameError('');
       setEmailError('');
       
@@ -165,7 +168,8 @@ export default function CustomerFormModal({
     if (validateForm()) {
       onSubmit({ 
         name: nameInputRef.current?.value || '', 
-        email: emailInputRef.current?.value || '' 
+        email: emailInputRef.current?.value || '',
+        type: selectedType
       });
     }
   };
@@ -235,6 +239,22 @@ export default function CustomerFormModal({
                 autoComplete="off"
               />
               {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
+            </div>
+            
+            <div className="mb-6">
+              <label htmlFor="customer-type" className="block text-sm font-medium text-gray-700 mb-1">
+                Tipo de Cliente
+              </label>
+              <select
+                id="customer-type"
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none"
+                disabled={isLoading}
+              >
+                <option value="NORMAL">Normal</option>
+                <option value="FRECUENT">Frecuente</option>
+              </select>
             </div>
             
             <div className="flex justify-center space-x-4">

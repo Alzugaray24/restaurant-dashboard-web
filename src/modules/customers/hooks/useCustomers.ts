@@ -5,6 +5,7 @@ import {
   deleteCustomer,
   createCustomer,
   updateCustomer,
+  updateCustomerStatus,
   CustomerData,
 } from "../api/customerApi";
 
@@ -18,6 +19,10 @@ export const useCustomers = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const [updateStatusError, setUpdateStatusError] = useState<string | null>(
+    null
+  );
 
   const getCustomers = async () => {
     setLoading(true);
@@ -108,6 +113,37 @@ export const useCustomers = () => {
     }
   };
 
+  const handleUpdateCustomerStatus = async (id: number) => {
+    setIsUpdatingStatus(true);
+    setUpdateStatusError(null);
+    try {
+      const success = await updateCustomerStatus(id);
+      if (success) {
+        // Actualizar estado local para reflejar el cambio de estado
+        setCustomers((prev) =>
+          prev.map((customer) =>
+            customer.id === id
+              ? { ...customer, active: !customer.active }
+              : customer
+          )
+        );
+        return true;
+      } else {
+        setUpdateStatusError("No se pudo actualizar el estado del cliente");
+        return false;
+      }
+    } catch (err) {
+      setUpdateStatusError(
+        err instanceof Error
+          ? err.message
+          : "Error al actualizar el estado del cliente"
+      );
+      return false;
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   useEffect(() => {
     getCustomers();
   }, []);
@@ -122,9 +158,12 @@ export const useCustomers = () => {
     createError,
     isUpdating,
     updateError,
+    isUpdatingStatus,
+    updateStatusError,
     refreshCustomers: getCustomers,
     deleteCustomer: handleDeleteCustomer,
     createCustomer: handleCreateCustomer,
     updateCustomer: handleUpdateCustomer,
+    updateCustomerStatus: handleUpdateCustomerStatus,
   };
 };

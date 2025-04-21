@@ -31,4 +31,9 @@ export interface Dish {
    * Tipo de plato
    */
   type: DishType;
+
+  /**
+   * Indica si el plato está activo
+   */
+  active: boolean;
 }
