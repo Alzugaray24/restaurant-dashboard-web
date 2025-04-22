@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useOrders } from '@/modules/orders/hooks';
 import { SearchInput } from '@/shared/components/forms/search-input';
 import { StatCard } from '@/shared/components/cards/stat-card';
@@ -21,6 +22,7 @@ import {
 const ORDERS_PER_PAGE = parseInt(process.env.NEXT_PUBLIC_ITEMS_PER_PAGE || '6', 10);
 
 export function OrderList() {
+  const router = useRouter();
   const { 
     orders, 
     loading, 
@@ -84,6 +86,11 @@ export function OrderList() {
   const preparingOrders = orders.filter(o => o.status === 'PREPARING').length;
   const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').length;
   
+  // Función para ver detalles de una orden
+  const handleViewOrderDetails = (orderId: number) => {
+    router.push(`/orders/${orderId}`);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header and controls */}
@@ -205,7 +212,7 @@ export function OrderList() {
                           icon: <Eye size={16} />, 
                           tooltip: 'View Details', 
                           color: 'primary', 
-                          onClick: () => console.log('View order details', order) 
+                          onClick: () => handleViewOrderDetails(order.id) 
                         }
                       ]}
                     />
