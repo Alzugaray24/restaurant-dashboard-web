@@ -14,9 +14,9 @@ interface PageParams {
   id: string;
 }
 
-export default function OrderDetailPage({ params }: { params: PageParams | Promise<PageParams> }) {
-  // Unwrap params using React.use() if it's a Promise
-  const unwrappedParams = params instanceof Promise ? React.use(params) : params;
+export default function OrderDetailPage({ params }: { params: Promise<PageParams> }) {
+  // Unwrap params using React.use()
+  const unwrappedParams = React.use(params);
   const orderId = parseInt(unwrappedParams.id, 10);
 
   // Validar que el ID sea un número válido
