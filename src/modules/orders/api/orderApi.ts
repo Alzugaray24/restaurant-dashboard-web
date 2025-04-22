@@ -5,66 +5,111 @@ import { ORDER_ENDPOINT } from "../constants/api";
 const MOCK_ORDERS: Order[] = [
   {
     id: 1,
-    customerId: 56,
-    customerName: "Mati Alzu",
+    customer: {
+      id: 56,
+      name: "Mati Alzu",
+      email: "mati@example.com",
+      active: true,
+      type: "NORMAL",
+    },
     total: 3500,
     status: "PENDING",
     orderDate: "2023-10-15T14:30:00Z",
     items: [
       {
         id: 1,
-        dishId: 1,
-        dishName: "Tiramisú a la Criolla",
-        price: 1500,
+        dish: {
+          id: 1,
+          name: "Tiramisú a la Criolla",
+          price: 1500,
+          type: "DESSERT",
+          active: true,
+        },
+        unitPrice: 1500,
         quantity: 1,
+        specialNotes: null,
       },
       {
         id: 2,
-        dishId: 2,
-        dishName: "Risotto Especial",
-        price: 2000,
+        dish: {
+          id: 2,
+          name: "Risotto Especial",
+          price: 2000,
+          type: "MAIN",
+          active: true,
+        },
+        unitPrice: 2000,
         quantity: 1,
+        specialNotes: null,
       },
     ],
   },
   {
     id: 2,
-    customerId: 57,
-    customerName: "Lucas",
+    customer: {
+      id: 57,
+      name: "Lucas",
+      email: "lucas@example.com",
+      active: true,
+      type: "NORMAL",
+    },
     total: 4000,
     status: "DELIVERED",
     orderDate: "2023-10-14T18:45:00Z",
     items: [
       {
         id: 3,
-        dishId: 4,
-        dishName: "Ensalada Mediterránea",
-        price: 1800,
+        dish: {
+          id: 4,
+          name: "Ensalada Mediterránea",
+          price: 1800,
+          type: "STARTER",
+          active: true,
+        },
+        unitPrice: 1800,
         quantity: 2,
+        specialNotes: null,
       },
       {
         id: 4,
-        dishId: 1,
-        dishName: "Tiramisú a la Criolla",
-        price: 1500,
+        dish: {
+          id: 1,
+          name: "Tiramisú a la Criolla",
+          price: 1500,
+          type: "DESSERT",
+          active: true,
+        },
+        unitPrice: 1500,
         quantity: 1,
+        specialNotes: null,
       },
     ],
   },
   {
     id: 3,
-    customerId: 60,
-    customerName: "Juan Pérez",
+    customer: {
+      id: 60,
+      name: "Juan Pérez",
+      email: "juan@example.com",
+      active: true,
+      type: "NORMAL",
+    },
     total: 2400,
     status: "PREPARING",
     orderDate: "2023-10-15T19:20:00Z",
     items: [
       {
         id: 5,
-        dishId: 5,
-        dishName: "Pasta al Pesto",
-        price: 2400,
+        dish: {
+          id: 5,
+          name: "Pasta al Pesto",
+          price: 2400,
+          type: "MAIN",
+          active: true,
+        },
+        unitPrice: 2400,
         quantity: 1,
+        specialNotes: null,
       },
     ],
   },
@@ -116,6 +161,7 @@ export interface OrderData {
   items: {
     dishId: number;
     quantity: number;
+    specialNotes?: string;
   }[];
 }
 
