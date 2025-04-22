@@ -2,3 +2,8 @@ export * from "./badge";
 export * from "./avatar";
 export * from "./status-badge";
 export * from "./user-avatar";
+export * from "./order-items-list";
+export * from "./price-display";
+export * from "./client-info";
+export * from "./order-info";
+export * from "./order-card";
